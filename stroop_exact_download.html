@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Stroop 色字干擾測驗</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: linear-gradient(180deg, #eef2ff 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin: 0 0 8px 0;
+      line-height: 1.3;
+    }
+
+    p {
+      line-height: 1.6;
+      margin: 8px 0;
+    }
+
+    .muted { color: var(--muted); }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .stimulus-area {
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 12px 0 6px;
+    }
+
+    .word {
+      font-size: clamp(2.6rem, 11vw, 4.6rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      user-select: none;
+      line-height: 1.2;
+      text-align: center;
+      word-break: keep-all;
+    }
+
+    .prompt {
+      font-size: 1rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 20px 14px;
+      font-size: 2rem; /* 字體放大 */
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.06s ease, opacity 0.2s ease, background 0.2s ease;
+      min-height: 80px;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .choice-red, .choice-blue, .choice-green, .choice-yellow {
+      background: #f3f4f6;
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-size: 2.4rem; /* 再加大 */
+      font-weight: 900;
+    }
+
+    .hidden { display: none !important; }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0 18px;
+    }
+
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: #fafafa;
+    }
+
+    .metric .label {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .metric .value {
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      overflow: hidden;
+      border-radius: 14px;
+      margin-top: 8px;
+      background: white;
+      border: 1px solid var(--border);
+    }
+
+    th, td {
+      padding: 10px 8px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f8fafc;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    .ok { color: var(--success); font-weight: 700; }
+    .ng { color: var(--danger); font-weight: 700; }
+
+    .footer-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .hint {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    @media (max-width: 520px) {
+      .card { padding: 14px; }
+      .buttons { grid-template-columns: 1fr 1fr; }
+      .result-grid { grid-template-columns: 1fr; }
+      th, td { font-size: 0.84rem; padding: 8px 6px; }
+      button { font-size: 2.6rem; min-height: 90px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="startScreen">
+      <div class="topbar">
+        <div>
+          <h1>Stroop 色字干擾測驗</h1>
+          <p class="muted">手機可直接操作，每次固定 20 題。</p>
+        </div>
+        <div class="badge">20 題版本</div>
+      </div>
+
+      <p>玩法：畫面中央會出現一個顏色字詞，例如「紅」、「藍」、「綠」、「黃」，但文字的墨色可能和字義不同。請你<strong>忽略文字本身的意思</strong>，只根據<strong>字的顏色</strong>作答。</p>
+      <p>例如：若畫面顯示「紅」但文字顏色其實是藍色，你就要按<strong>藍</strong>。</p>
+      <p class="hint">結果會顯示：總體準確率、每題反應時間、以及總體平均反應時間。</p>
+
+      <div class="footer-actions">
+        <button class="btn-primary" id="startBtn">開始測驗</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="testScreen">
+      <div class="topbar">
+        <div class="badge" id="progressBadge">第 1 / 20 題</div>
+        <div class="badge" id="timerBadge">反應中</div>
+      </div>
+
+      <div class="stimulus-area">
+        <div class="prompt">請選擇「字的顏色」</div>
+        <div class="word" id="wordStimulus">紅</div>
+      </div>
+
+      <div class="buttons">
+        <button class="choice-red" data-answer="紅">紅</button>
+        <button class="choice-blue" data-answer="藍">藍</button>
+        <button class="choice-green" data-answer="綠">綠</button>
+        <button class="choice-yellow" data-answer="黃">黃</button>
+      </div>
+    </div>
+
+    <div class="card hidden" id="resultScreen">
+      <h1>測驗完成</h1>
+      <p class="muted">以下為本次 20 題測驗結果。</p>
+
+      <div class="result-grid">
+        <div class="metric">
+          <div class="label">總體準確率</div>
+          <div class="value" id="accuracyValue">0%</div>
+        </div>
+        <div class="metric">
+          <div class="label">總體平均反應時間</div>
+          <div class="value" id="avgRtValue">0 ms</div>
+        </div>
+      </div>
+
+      <div style="overflow:auto; max-height: 60vh;">
+        <table>
+          <thead>
+            <tr>
+              <th>題號</th>
+              <th>顯示字</th>
+              <th>字的顏色</th>
+              <th>你的作答</th>
+              <th>是否正確</th>
+              <th>反應時間</th>
+            </tr>
+          </thead>
+          <tbody id="resultTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn-primary" id="restartBtn">再測一次</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = [
+      { word: '紅', css: '#dc2626' },
+      { word: '藍', css: '#2563eb' },
+      { word: '綠', css: '#16a34a' },
+      { word: '黃', css: '#ca8a04' },
+    ];
+
+    const TOTAL_QUESTIONS = 20;
+
+    const startScreen = document.getElementById('startScreen');
+    const testScreen = document.getElementById('testScreen');
+    const resultScreen = document.getElementById('resultScreen');
+
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const progressBadge = document.getElementById('progressBadge');
+    const timerBadge = document.getElementById('timerBadge');
+    const wordStimulus = document.getElementById('wordStimulus');
+    const choiceButtons = [...document.querySelectorAll('[data-answer]')];
+
+    const accuracyValue = document.getElementById('accuracyValue');
+    const avgRtValue = document.getElementById('avgRtValue');
+    const resultTableBody = document.getElementById('resultTableBody');
+
+    let questions = [];
+    let currentIndex = 0;
+    let startTime = 0;
+    let results = [];
+    let locked = false;
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function generateQuestions() {
+      const list = [];
+
+      while (list.length < TOTAL_QUESTIONS) {
+        const shownWord = COLORS[Math.floor(Math.random() * COLORS.length)].word;
+        const inkColor = COLORS[Math.floor(Math.random() * COLORS.length)].word;
+        list.push({ shownWord, inkColor });
+      }
+
+      return shuffle(list).map((q, idx) => ({ id: idx + 1, ...q }));
+    }
+
+    function showScreen(name) {
+      startScreen.classList.add('hidden');
+      testScreen.classList.add('hidden');
+      resultScreen.classList.add('hidden');
+      if (name === 'start') startScreen.classList.remove('hidden');
+      if (name === 'test') testScreen.classList.remove('hidden');
+      if (name === 'result') resultScreen.classList.remove('hidden');
+    }
+
+    function renderQuestion() {
+      const q = questions[currentIndex];
+      progressBadge.textContent = `第 ${currentIndex + 1} / ${TOTAL_QUESTIONS} 題`;
+      timerBadge.textContent = '請作答';
+      wordStimulus.textContent = q.shownWord;
+      const colorDef = COLORS.find(c => c.word === q.inkColor);
+      wordStimulus.style.color = colorDef.css;
+
+      // 隨機排列按鍵位置（真正改變位置）
+      const labels = shuffle(['紅','藍','綠','黃']);
+      const buttonsContainer = document.querySelector('.buttons');
+      buttonsContainer.innerHTML = '';
+
+      labels.forEach(label => {
+        const btn = document.createElement('button');
+        btn.dataset.answer = label;
+        btn.textContent = label;
+        btn.className = 'choice-red';
+
+        if(label==='紅') btn.className='choice-red';
+        if(label==='藍') btn.className='choice-blue';
+        if(label==='綠') btn.className='choice-green';
+        if(label==='黃') btn.className='choice-yellow';
+
+        btn.addEventListener('click',()=>handleAnswer(label));
+        buttonsContainer.appendChild(btn);
+      });
+
+      startTime = performance.now();
+      locked = false;
+    }
+
+    function startTest() {
+      questions = generateQuestions();
+      currentIndex = 0;
+      results = [];
+      showScreen('test');
+      renderQuestion();
+    }
+
+    function handleAnswer(selected) {
+      if (locked) return;
+      locked = true;
+
+      const q = questions[currentIndex];
+      const endTime = performance.now();
+      const rt = Math.round(endTime - startTime);
+      const isCorrect = selected === q.inkColor;
+
+      results.push({
+        index: currentIndex + 1,
+        shownWord: q.shownWord,
+        inkColor: q.inkColor,
+        answer: selected,
+        correct: isCorrect,
+        rt,
+      });
+
+      timerBadge.textContent = `${rt} ms`;
+
+      setTimeout(() => {
+        currentIndex += 1;
+        if (currentIndex < TOTAL_QUESTIONS) {
+          renderQuestion();
+        } else {
+          renderResults();
+          showScreen('result');
+        }
+      }, 180);
+    }
+
+    function renderResults() {
+      const correctCount = results.filter(r => r.correct).length;
+      const accuracy = ((correctCount / results.length) * 100).toFixed(1);
+      const avgRt = Math.round(results.reduce((sum, r) => sum + r.rt, 0) / results.length);
+
+      accuracyValue.textContent = `${accuracy}%`;
+      avgRtValue.textContent = `${avgRt} ms`;
+
+      resultTableBody.innerHTML = results.map(r => `
+        <tr>
+          <td>${r.index}</td>
+          <td>${r.shownWord}</td>
+          <td>${r.inkColor}</td>
+          <td>${r.answer}</td>
+          <td class="${r.correct ? 'ok' : 'ng'}">${r.correct ? '正確' : '錯誤'}</td>
+          <td>${r.rt} ms</td>
+        </tr>
+      `).join('');
+    }
+
+    startBtn.addEventListener('click', startTest);
+    restartBtn.addEventListener('click', startTest);
+    choiceButtons.forEach(btn => {
+      btn.addEventListener('click', () => handleAnswer(btn.dataset.answer));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (testScreen.classList.contains('hidden')) return;
+      const keyMap = {
+        '1': '紅',
+        '2': '藍',
+        '3': '綠',
+        '4': '黃',
+        'r': '紅',
+        'b': '藍',
+        'g': '綠',
+        'y': '黃',
+      };
+      const selected = keyMap[e.key.toLowerCase()];
+      if (selected) handleAnswer(selected);
+    });
+  </script>
+</body>
+</html>
